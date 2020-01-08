@@ -11,7 +11,15 @@
 	"locations_frequencies": [
 		{
 			"location": $(location),
-			"location_frequency": $(location_frequency)
+			"location_frequency": $(location_frequency),
+			"frequency_mean": $(frequency_mean),
+			"frequency_stdev": $(frequency_stdev),
+			"frequencies": [
+				$(frequency_1),
+				$(frequency_2),
+				...
+				$(frequency_n)
+			]
 		},
 		...
 	],
@@ -24,7 +32,15 @@
 	"computers_frequency": [
 		{
 			"computer": $(computer),
-			"computer_mean": $(computer_mean),	
+			"computer_proportion": $(computer_proportion),
+			"frequency_mean": $(frequency_mean),
+			"frequency_stdev": $(frequency_stdev),
+			"frequencies": [
+				$(frequency_1),
+				$(frequency_2),
+				...
+				$(frequency_n)
+			]
 		},
 		...
 	],
@@ -56,12 +72,12 @@ Cd for an event with respect to frequency is defined as follows (scaling might b
 Cd = min[log(abs(e[frequency] - frequency_mean)), log(sequitur(frequencies, round(e[frequency] / 60)))]
 
 
-## Time-Location ## 
+## Location ## 
 
-Cw for an event with respect to location is defined as follows (scaling might be needed):
+Cw for an event with respect to frequency and location is defined as follows (scaling might be needed):
 
 if e[location] in locations:
-	Cw = log(locations_frequencies[e[location]][1-frequency])
+	Cw = log(1 - locations_frequencies[e[location]][location_frequency])
 else:
 	Cw = Inf.
 
@@ -70,18 +86,29 @@ Cd for an event with respect to location is defined as follows (scaling might be
 Cd = log(sequitur(locations, e[location]))
 
 
-## Time-Computer ##
+## Computer ##
 
-Cw for an event with respect to computer is defined as follows (scaling might be needed):
+Cw for an event with respect to frequency and computer is defined as follows (scaling might be needed):
 
-if e[location] in locations:
-	Cw = log(locations_frequencies[e[location]][1-frequency])
+if e[location] in computers:
+	Cw = log(1 - computers_frequencies[e[computer]][computer_proportion])
 else:
 	Cw = Inf.
 
-Cd for an event with respect to location is defined as follows (scaling might be needed):
+Cd for an event with respect to computer is defined as follows (scaling might be needed):
 
-Cd = log(sequitur(locations, e[location]))
+Cd = log(sequitur(computers, e[computer]))
+
+
+## Location Frequency ##
+
+See "Frequency". Frequencies are relative to a location.
+
+
+## Computer Frequency ##
+
+See "Frequency". Frequencies are relative to a computer.
+
 
 
 
