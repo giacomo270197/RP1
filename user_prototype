@@ -21,36 +21,67 @@
 		...
 		$(location_n)	
 	],
+	"computers_frequency": [
+		{
+			"computer": $(computer),
+			"computer_mean": $(computer_mean),	
+		},
+		...
+	],
 	"computers": [
-
-	]
+		$(computer_1),
+		$(computer_2),
+		...
+		$(computer_n)	
+	],
 } 
 
 # FEATURES #
 
+## Prototype belonging ##
+
+Prototype[user] = e[user]
 
 ## Frequency ##
 
 Cw for an event with respect to frequency is defined as follows (scaling might be needed): 
 
-if [e < (frequency_mean + frequency_stdev) and e > (frequency_mean - frequency_stdev)]:
+if [e[frequency] < (frequency_mean + frequency_stdev) and e[frequency] > (frequency_mean - frequency_stdev)]:
 	Cw = log(e)
 else:
 	Cw = Inf.
 
 Cd for an event with respect to frequency is defined as follows (scaling might be needed):
 
-Cd = min[log(stdev(frequencies)), log(sequitur(floor(e / 60)))]
+Cd = min[log(abs(e[frequency] - frequency_mean)), log(sequitur(frequencies, round(e[frequency] / 60)))]
 
 
-## Location ## 
+## Time-Location ## 
 
 Cw for an event with respect to location is defined as follows (scaling might be needed):
 
-Cw = log(locations_frequencies[e][1-frequency])
+if e[location] in locations:
+	Cw = log(locations_frequencies[e[location]][1-frequency])
+else:
+	Cw = Inf.
 
 Cd for an event with respect to location is defined as follows (scaling might be needed):
 
-Cd = log(sequitur(locations))
+Cd = log(sequitur(locations, e[location]))
+
+
+## Time-Computer ##
+
+Cw for an event with respect to computer is defined as follows (scaling might be needed):
+
+if e[location] in locations:
+	Cw = log(locations_frequencies[e[location]][1-frequency])
+else:
+	Cw = Inf.
+
+Cd for an event with respect to location is defined as follows (scaling might be needed):
+
+Cd = log(sequitur(locations, e[location]))
+
 
 
