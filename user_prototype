@@ -1,0 +1,52 @@
+{
+	"user": $(user);
+	"frequency_mean": $(frequency_mean),
+    "frequency_stdev": $(frequency_stdev),
+    "frequencies": [
+		$(frequency_1),
+		$(frequency_2),
+		...
+		$(frequency_n)
+	],
+	"locations_frequencies": [
+		{
+			"location": $(location),
+			"location_frequency": $(location_frequency)
+		},
+		...
+	],
+	"locations": [
+		$(location_1),
+		$(location_2),
+		...
+		$(location_n)	
+	]	
+} 
+
+# FEATURES #
+
+
+## Frequency ##
+
+Cw for an event with respect to frequency is defined as follows (scaling might be needed): 
+
+if [e < (frequency_mean + frequency_stdev) and e > (frequency_mean - frequency_stdev)]:
+	Cw = log(e)
+else:
+	Cw = Inf.
+
+Cd for an event with respect to frequency is defined as follows (scaling might be needed):
+
+Cd = min[log(stdev(frequencies)), log(sequitur(floor(e / 60)))]
+
+
+## Location ## 
+
+Cw for an event with respect to location is defined as follows (scaling might be needed):
+
+Cw = log(locations_frequencies[e][1-frequency])
+
+Cd for an event with respect to location is defined as follows (scaling might be needed):
+
+Cd = log(sequitur(locations))
+
