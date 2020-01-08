@@ -8,7 +8,7 @@
 		...
 		$(frequency_n)
 	],
-	"locations_frequencies": [
+	"locations_info": [
 		{
 			"location": $(location),
 			"location_frequency": $(location_frequency),
@@ -29,7 +29,7 @@
 		...
 		$(location_n)	
 	],
-	"computers_frequency": [
+	"computers_info": [
 		{
 			"computer": $(computer),
 			"computer_proportion": $(computer_proportion),
@@ -77,7 +77,7 @@ Cd = min[log(abs(e[frequency] - frequency_mean)), log(sequitur(frequencies, roun
 Cw for an event with respect to frequency and location is defined as follows (scaling might be needed):
 
 if e[location] in locations:
-	Cw = log(1 - locations_frequencies[e[location]][location_frequency])
+	Cw = log(1 - locations_info[e[location]][location_frequency])
 else:
 	Cw = Inf.
 
@@ -90,8 +90,8 @@ Cd = log(sequitur(locations, e[location]))
 
 Cw for an event with respect to frequency and computer is defined as follows (scaling might be needed):
 
-if e[location] in computers:
-	Cw = log(1 - computers_frequencies[e[computer]][computer_proportion])
+if e[computer] in computers:
+	Cw = log(1 - computers_info[e[computer]][computer_proportion])
 else:
 	Cw = Inf.
 
