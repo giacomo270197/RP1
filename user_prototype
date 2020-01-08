@@ -1,8 +1,8 @@
 {
 	"user": $(user);
 	"frequency_mean": $(frequency_mean),
-    "frequency_stdev": $(frequency_stdev),
-    "frequencies": [
+	"frequency_stdev": $(frequency_stdev),
+	"frequencies": [
 		$(frequency_1),
 		$(frequency_2),
 		...
@@ -20,7 +20,10 @@
 		$(location_2),
 		...
 		$(location_n)	
-	]	
+	],
+	"computers": [
+
+	]
 } 
 
 # FEATURES #
@@ -49,4 +52,5 @@ Cw = log(locations_frequencies[e][1-frequency])
 Cd for an event with respect to location is defined as follows (scaling might be needed):
 
 Cd = log(sequitur(locations))
+
 
