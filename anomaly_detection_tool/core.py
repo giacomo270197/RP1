@@ -101,8 +101,8 @@ parser = Parser()
 prototypes = Prototypes()
 for line in file:
     analyze(line, parser, prototypes)
-    # thread = threading.Thread(target=analyze, args=[line, parser, prototypes])
-    # thread.start()
+    #thread = threading.Thread(target=analyze, args=[line, parser, prototypes])
+    #thread.start()
 # while 1:
 #     where = file.tell()
 #     line = file.readline()
