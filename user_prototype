@@ -1,5 +1,5 @@
 {
-	"user": $(user);
+	"user": $(user),
 	"frequency_mean": $(frequency_mean),
 	"frequency_stdev": $(frequency_stdev),
 	"frequencies": [
