@@ -83,13 +83,18 @@ class Prototypes:
         if len(prototype["intervals"]) < 100:
             return 0, 0
         # Considering 2 stdev as limit of possible lottery
-        c_w = 100 / prototype["interval_stdev"] * abs(
-            prototype["interval_mean"] - (parsed[0] - prototype["intervals"][-1]))
+        if prototype["interval_mean"] - prototype["interval_stdev"] < parsed[0] < prototype[
+            "interval_mean"] + prototype["interval_stdev"]:
+            c_w = 100 / prototype["interval_stdev"] * abs(
+                prototype["interval_mean"] - (parsed[0] - prototype["intervals"][-1]))
+        else:
+            c_w = 9999999
         c_d = self.file_compress(",".join([str(x) for x in prototype["intervals"][-100:]]), "intervals")
         return c_w, c_d
 
     def analyze(self, prototype, parsed):
         x, y = self.analyze_global_intervals(prototype, parsed)
+        print(x, y)
         self.log_file.write("Cw: {}, ".format(str(x)))
         self.log_file.write("Cd: {}, ".format(str(y)))
         self.log_file.write("U: {}\n".format(str(x - y)))
