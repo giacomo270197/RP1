@@ -6,7 +6,7 @@ def a(Auser, flights):
 #citiy: [time between conexions]
     cities = {
         'Albuquerque' : [],
-        'Las Cruces' : [], 
+        'Las Cruces' : [],
         'Rio Rancho' : [],
         'Enchanted Hills' : [],
         'Santa Fe' : [],
@@ -73,7 +73,7 @@ def c(Acomputer, Auser, flights):
 
 #calculate the interval in which a user _Auser_ login
 def d(Auser, flights):
-    a = flights.loc[(flights.computer == Auser)]
+    a = flights.loc[(flights.user == Auser)]
     times = a['time'].tolist()
     res = []
     if len(times) > 1:
@@ -87,9 +87,9 @@ def d(Auser, flights):
 
 
 
-flights = pd.read_csv('dataInvestigar.csv', names = ['time', 'user', 'computer', 'location', 'lat', 'lon'])
+flights = pd.read_csv('../datasets/partial_log', names = ['time', 'user', 'computer', 'location', 'lat', 'lon'])
 
 #a('U53', flights)
 #b('C1', flights)
 #c('C1', 'U1', flights)
-#d('C53', flights)
+d('U553', flights)

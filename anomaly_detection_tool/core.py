@@ -1,9 +1,8 @@
-import time
-import os
 import sys
-import threading
 import statistics
 import json
+import io
+import lzma
 
 
 class Parser:
@@ -94,23 +93,9 @@ def analyze(line, parser, prototypes):
 
 filename = sys.argv[1]
 file = open(filename, 'r')
-# st_results = os.stat(filename)
-# st_size = st_results[6]
-# file.seek(st_size)
 parser = Parser()
 prototypes = Prototypes()
 for line in file:
     analyze(line, parser, prototypes)
-    #thread = threading.Thread(target=analyze, args=[line, parser, prototypes])
-    #thread.start()
-# while 1:
-#     where = file.tell()
-#     line = file.readline()
-#     if not line:
-#         time.sleep(1)
-#         file.seek(where)
-#     else:
-#         thread = threading.Thread(target=analyze, args=[line, parser, prototypes])
-#         thread.start()
 
 print(json.dumps(prototypes.prototypes["U1"], indent=2))

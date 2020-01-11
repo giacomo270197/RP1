@@ -2,6 +2,7 @@ import sys
 import json
 
 user = sys.argv[1]
+show = {}
 intervals = {}
 
 with open(sys.argv[2], "r") as file:
@@ -14,7 +15,11 @@ with open(sys.argv[2], "r") as file:
                 intervals[computer] = [line[0]]
             else:
                 time = line[0] - intervals[computer][-1]
+                intervals[computer].append(time)
                 if time >= int(sys.argv[3]):
-                    intervals[computer].append(time)
+                    if computer in show:
+                        show[computer].append(time)
+                    else:
+                        show[computer] = [time]
 
-print(json.dumps(intervals, indent=2))
+print(json.dumps(show, indent=2))
