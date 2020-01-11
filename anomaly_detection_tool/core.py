@@ -94,7 +94,6 @@ class Prototypes:
 
     def analyze(self, prototype, parsed):
         x, y = self.analyze_global_intervals(prototype, parsed)
-        print(x, y)
         self.log_file.write("Cw: {}, ".format(str(x)))
         self.log_file.write("Cd: {}, ".format(str(y)))
         self.log_file.write("U: {}\n".format(str(x - y)))
@@ -124,7 +123,7 @@ def analyze(line, parser, prototypes):
     parsed = parser.parse(line)
     prototype = prototypes.assign_to_prototype(parsed)
     prototypes.update(prototype, parsed)
-
+    prototypes.analyze(prototype, parsed)
 
 if __name__ == "__main__":
     filename = sys.argv[1]
