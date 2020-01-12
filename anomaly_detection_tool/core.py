@@ -3,6 +3,7 @@ import json
 import os
 import argparse
 import random
+import math
 
 
 class Parser:
@@ -39,8 +40,8 @@ class Prototypes:
     def interval_update(self, prototype, interval):
         if len(prototype["intervals"]):
             prototype["intervals"].append(interval - sum(prototype["intervals"]))
-            prototype["interval_mean"] = statistics.mean(prototype["intervals"])
-            prototype["interval_stdev"] = statistics.stdev(prototype["intervals"])
+            prototype["interval_mean"] = statistics.mean(prototype["intervals"][-100:])
+            prototype["interval_stdev"] = statistics.stdev(prototype["intervals"][-100:])
         else:
             prototype["intervals"].append(interval)
             prototype["interval_mean"] = statistics.mean(2 * prototype["intervals"])
@@ -52,9 +53,9 @@ class Prototypes:
             prototype["locations_info"][location]["intervals"].append(
                 interval - sum(prototype["locations_info"][location]["intervals"]))
             prototype["locations_info"][location]["interval_mean"] = statistics.mean(
-                prototype["locations_info"][location]["intervals"])
+                prototype["locations_info"][location]["intervals"][-100:])
             prototype["locations_info"][location]["interval_stdev"] = statistics.stdev(
-                prototype["locations_info"][location]["intervals"])
+                prototype["locations_info"][location]["intervals"][-100:])
         else:
             prototype["locations_info"][location] = {
                 "interval_mean": statistics.mean(2 * [interval]),
@@ -68,9 +69,9 @@ class Prototypes:
             prototype["computers_info"][computer]["intervals"].append(
                 interval - sum(prototype["computers_info"][computer]["intervals"]))
             prototype["computers_info"][computer]["interval_mean"] = statistics.mean(
-                prototype["computers_info"][computer]["intervals"])
+                prototype["computers_info"][computer]["intervals"][-100:])
             prototype["computers_info"][computer]["interval_stdev"] = statistics.stdev(
-                prototype["computers_info"][computer]["intervals"])
+                prototype["computers_info"][computer]["intervals"][-100:])
         else:
             prototype["computers_info"][computer] = {
                 "interval_mean": statistics.mean(2 * [interval]),
@@ -94,7 +95,7 @@ class Prototypes:
         return new_size
 
     def analyze_compression(self, string, kind):
-        if kind == "list":
+        if kind == "lists":
             samples = list(set(string))
             random_string = [random.choice(samples) for _ in range(len(string))]
             random_size = self.file_compress(",".join(random_string))
@@ -143,7 +144,7 @@ class Prototypes:
             return 0, 0
         frequency = (100 / len(prototype["intervals"])) * len(obj["intervals"])
         c_w = 100 - frequency
-        c_d = self.analyze_compression(prototype[target], "lists")
+        c_d = self.analyze_compression(prototype[target][-100:], "lists")
         return c_w, c_d
 
     def analyze(self, prototype, parsed):
