@@ -183,7 +183,7 @@ class Prototypes:
         if parsed[1] in self.prototypes:
             return self.prototypes[parsed[1]]
         else:
-            prot = self.generate_prototype(parsed[1])
+            prot = self.generate_prototype(parsed)
             self.prototypes[parsed[1]] = prot
             return prot
 
@@ -195,24 +195,15 @@ def analyze(line, parser, prototypes):
     prototypes.analyze(prototype, parsed)
 
 
-if __name__ == "__main__":
-
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Run analysis program on a log file')
-    parser.add_argument("filename", help="Source log file")
-    parser.add_argument("-e", "--export_prototypes", action="store_true", help="Export models to file")
-    parser.add_argument("-i", "--import_prototypes", action="store_true", help="Import models from file")
-    args = parser.parse_args()
-
+def main(filename, export_prototypes, import_prototypes):
     # Open log file
-    filename = args.filename
     file = open(filename, 'r')
 
     # Create a log file parser
     parser = Parser()
 
     # Create a collection of prototypes
-    if args.import_prototypes:
+    if import_prototypes:
         prototypes = Prototypes(imp=True)
     else:
         prototypes = Prototypes()
@@ -222,7 +213,7 @@ if __name__ == "__main__":
         analyze(line, parser, prototypes)
 
     # Export prototypes to file
-    if args.export_prototypes:
+    if export_prototypes:
         prototypes.export_prototypes()
 
     # Call prototypes destructor (For closing file handles)
