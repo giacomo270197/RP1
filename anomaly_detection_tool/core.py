@@ -130,6 +130,9 @@ class Prototypes:
         else:
             c_w = 99
         c_d = self.analyze_compression(obj["intervals"], "intervals")
+        # print("Intervals ", target, c_w, c_d)
+        c_w = round(math.log(c_w, 2), 2) if c_w >= 1 else 0
+        c_d = round(math.log(c_d, 2), 2) if c_d >= 1 else 0
         return c_w, c_d
 
     def analyze_lists(self, prototype, parsed, target):
@@ -145,6 +148,8 @@ class Prototypes:
         frequency = (100 / len(prototype["intervals"])) * len(obj["intervals"])
         c_w = 100 - frequency
         c_d = self.analyze_compression(prototype[target][-100:], "lists")
+        c_w = round(math.log(c_w, 2), 2) if c_w >= 1 else 0
+        c_d = round(math.log(c_d, 2), 2) if c_d >= 1 else 0
         return c_w, c_d
 
     def analyze(self, prototype, parsed):
@@ -154,8 +159,8 @@ class Prototypes:
                    self.analyze_lists(prototype, parsed, "locations"),
                    self.analyze_lists(prototype, parsed, "computers")]
         complexities = [sum(x) for x in zip(*results)]
-        c_w = complexities[0]
-        c_d = complexities[1]
+        c_w = round(complexities[0], 2)
+        c_d = round(complexities[1], 2)
         if c_w - c_d > 0:
             self.log_file.write("{}  --->\t".format(",".join([str(x) for x in parsed])))
             self.log_file.write("Cw: {}, ".format(str(c_w)))
