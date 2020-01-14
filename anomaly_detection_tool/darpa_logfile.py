@@ -1,4 +1,5 @@
-from core import Prototypes
+from prototypes import Prototypes
+
 
 class DarpaLogfile(Prototypes):
-    
+    pass
