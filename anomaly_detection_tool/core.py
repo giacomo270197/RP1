@@ -33,7 +33,7 @@ class Prototypes:
         self.export_file.close()
 
     def import_prototypes(self):
-        self.export_file = open("exported_prototypes", "w")
+        self.export_file = open("exported_prototypes", "r")
         self.prototypes = json.load(self.export_file)
         self.export_file.close()
 
@@ -123,12 +123,12 @@ class Prototypes:
         if len(obj["intervals"]) < 100:
             return 0, 0
         # Considering 2 stdev as limit of possible lottery
-        if obj["interval_mean"] - 4 * obj["interval_stdev"] < parsed[0] - sum(obj["intervals"]) < \
-                obj["interval_mean"] + 4 * obj["interval_stdev"]:
+        if obj["interval_mean"] - 3.5 * obj["interval_stdev"] < parsed[0] - sum(obj["intervals"]) < \
+                obj["interval_mean"] + 3.5 * obj["interval_stdev"]:
             c_w = 100 / (4 * obj["interval_stdev"]) * abs(
                 obj["interval_mean"] - (parsed[0] - sum(obj["intervals"])))
         else:
-            c_w = 99
+            c_w = 9999
         c_d = self.analyze_compression(obj["intervals"], "intervals")
         # print("Intervals ", target, c_w, c_d)
         c_w = round(math.log(c_w, 2), 2) if c_w >= 1 else 0
@@ -139,8 +139,12 @@ class Prototypes:
         obj = None
         if target == "locations":
             obj = prototype["locations_info"][parsed[3]]
+            if parsed[3] not in prototype["locations"]:
+                return 9999
         elif target == "computers":
             obj = prototype["computers_info"][parsed[2]]
+            if parsed[2] not in prototype["computers"]:
+                return 9999
         if not obj:
             exit()
         if len(obj["intervals"]) < 100:
