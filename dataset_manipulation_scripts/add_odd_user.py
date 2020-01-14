@@ -2,7 +2,7 @@ import sys, json, random
 import pandas as pd
 
 #13775,U387,C82,Alamogordo,(32.9, -105.96)
-num_computers = 2228 #should be 22284
+num_computers = 200 #should be 22284
 time = [0, 0] 
 
 time_pat = 60 #every minute
@@ -41,6 +41,7 @@ def odd_computer(user, data, logs):
     while c in computers_clean:
         c = 'C'+ str(random.randint(1, num_computers))
 
+
     a = logs.loc[logs.computer == c]
     city = a['location'].iloc[1]
     pos = a['lat'].iloc[1] + ',' + a['lon'].iloc[1]
@@ -60,9 +61,11 @@ def odd_n_computers(user, data, logs):
         while c in computers_clean:
             c = 'C'+ str(random.randint(1, num_computers))
 
-        a = logs.loc[logs.computer == c]
-        city = a['location'].iloc[1]
-        pos = a['lat'].iloc[1] + ',' + a['lon'].iloc[1]
+        #a = logs.loc[logs.computer == c]
+        #city = a['location'].iloc[1]
+        #pos = a['lat'].iloc[1] + ',' + a['lon'].iloc[1]
+        city = 'Farmington'
+        pos = '(36.728, -108.219)'
 
         new_log = str(random.randint(time[0], time[1])) +  ',' + user +  ',' + c +  ',' + city +  ',' + pos
         print('Adding: ' + new_log)
@@ -144,7 +147,8 @@ else:
         elif option == 'e':
             new_log = odd_abroad_city(user, data, logs)
             new_log2 = odd_n_computers(user, data, logs)
-            write_on_logs([new_log, new_log2], logs)
+            new_log2.append(new_log)
+            write_on_logs(new_log2, logs)
         
         else:
             print('Unknown option')

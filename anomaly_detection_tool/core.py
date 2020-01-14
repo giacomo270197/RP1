@@ -33,7 +33,7 @@ class Prototypes:
         self.export_file.close()
 
     def import_prototypes(self):
-        self.export_file = open("exported_prototypes", "w")
+        self.export_file = open("exported_prototypes", "r")
         self.prototypes = json.load(self.export_file)
         self.export_file.close()
 
