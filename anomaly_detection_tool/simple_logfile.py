@@ -19,22 +19,8 @@ class SimpleLogfile(Prototypes):
             ((stdev * stdev * (length - 2)) + (new_value - new_mean) * (new_value - old_mean)) / (length - 1)
         )
 
-    def lg(self, x, tol=1e-13):
-        res = 0.0
-        while x < 1:
-            res -= 1
-            x *= 2
-        while x >= 2:
-            res += 1
-            x /= 2
-        fp = 1.0
-        while fp >= tol:
-            fp /= 2
-            x *= x
-            if x >= 2:
-                x /= 2
-                res += fp
-        return res
+    def lg(self, x):
+        return x
 
     def interval_update(self, prototype, parsed, target="global"):
 
@@ -78,15 +64,9 @@ class SimpleLogfile(Prototypes):
             exit("No object")
 
         if len(obj["intervals"]):
-            old_mean = obj["interval_mean"]
-            obj["interval_mean"] = self.fast_mean(obj["interval_mean"], len(obj["intervals"]),
-                                                  interval - sum(obj["intervals"]))
-            obj["interval_stdev"] = self.fast_stdev(obj["interval_stdev"], old_mean, obj["interval_mean"],
-                                                    len(obj["intervals"]), interval - sum(obj["intervals"]))
+            obj["interval_mean"] = statistics.mean(obj["intervals"][-1000:])
+            obj["interval_stdev"] = statistics.stdev(obj["intervals"][-1000:])
             obj["intervals"].append(interval - sum(obj["intervals"]))
-            # if target == "global":
-            #     print("Global mean: {}".format(obj["interval_mean"]))
-            #     print("Global stdev: {}".format(obj["interval_stdev"]))
 
     def update(self, prototype, parsed):
         self.interval_update(prototype, parsed, "global")
@@ -103,21 +83,27 @@ class SimpleLogfile(Prototypes):
         os.remove("{}.lzma".format(filename))
         return new_size
 
-    def analyze_compression(self, string, kind):
+    def analyze_compression(self, string, kind, mean=0, stdev=0):
         if kind == "lists":
             samples = list(set(string))
             random_string = [random.choice(samples) for _ in range(len(string))]
+            same_string = [samples[0] for _ in range(len(string))]
             random_size = self.file_compress(",".join(random_string))
+            same_size = self.file_compress(",".join(same_string))
             actual_size = self.file_compress(",".join(string))
         elif kind == "intervals":
-            low_bound = min(string)
-            high_bound = max(string)
-            random_string = [random.randint(low_bound, high_bound) for _ in range(len(string))]
+            random_string = [random.uniform(mean - stdev, mean + stdev) for _ in range(len(string))]
+            same_string = [mean for _ in range(len(string))]
             random_size = self.file_compress(",".join([str(x) for x in random_string]))
+            same_size = self.file_compress(",".join([str(x) for x in same_string]))
             actual_size = self.file_compress(",".join([str(x) for x in string]))
         else:
             return 0
-        return (100 / random_size) * actual_size
+        if random_size == same_size:
+            return 0
+        if actual_size < same_size:
+            actual_size = same_size
+        return (100 / (random_size - same_size)) * (actual_size - same_size)
 
     def analyze_intervals(self, prototype, parsed, target="global"):
         obj = None
@@ -135,18 +121,18 @@ class SimpleLogfile(Prototypes):
             exit()
         if len(obj["intervals"]) < 100:
             return 0, 0
-        # Considering 4 stdev as limit of possible lottery
-        if obj["interval_mean"] - 4 * obj["interval_stdev"] < parsed[0] - sum(obj["intervals"]) < \
+        # Considering n stdev as limit of possible lottery
+        if obj["interval_mean"] - 4 * obj["interval_stdev"] <= parsed[0] - sum(obj["intervals"]) <= \
                 obj["interval_mean"] + 4 * obj["interval_stdev"]:
-            c_w = 100 / (4 * obj["interval_stdev"]) * abs(
-                obj["interval_mean"] - (parsed[0] - sum(obj["intervals"])))
+            if obj["interval_stdev"] == 0:
+                return 0, 0
+            c_w = 100 / (30 * obj["interval_stdev"]) * abs(obj["interval_mean"] - (parsed[0] - sum(obj["intervals"])))
         else:
-            c_w = 9999
-        c_d = self.analyze_compression(obj["intervals"], "intervals")
-        # print("Intervals ", target, c_w, c_d)
-        c_w = round(self.lg(c_w, 2), 2) if c_w >= 1 else 0
-        c_d = round(self.lg(c_d, 2), 2) if c_d >= 1 else 0
-        return c_w, c_d
+            return 9999, 0
+        c_d = self.analyze_compression(obj["intervals"][-50:], "intervals", obj["interval_mean"], obj["interval_stdev"])
+        c_w = round(self.lg(c_w), 2) if c_w >= 1 else 0
+        c_d = round(self.lg(c_d), 2) if c_d >= 1 else 0
+        return c_w + 1, c_d
 
     def analyze_lists(self, prototype, parsed, target):
         obj = None
@@ -165,24 +151,21 @@ class SimpleLogfile(Prototypes):
         frequency = (100 / len(prototype["intervals"])) * len(obj["intervals"])
         c_w = 100 - frequency
         c_d = self.analyze_compression(prototype[target], "lists")
-        c_w = round(self.lg(c_w, 2), 2) if c_w >= 1 else 0
-        c_d = round(self.lg(c_d, 2), 2) if c_d >= 1 else 0
+        c_w = round(self.lg(c_w), 2) if c_w >= 1 else 0
+        c_d = round(self.lg(c_d), 2) if c_d >= 1 else 0
         return c_w, c_d
 
     def analyze(self, prototype, parsed):
         results = [self.analyze_intervals(prototype, parsed),
-                   self.analyze_intervals(prototype, parsed, target="locations"),
+                   # self.analyze_intervals(prototype, parsed, target="locations"),
                    self.analyze_intervals(prototype, parsed, target="computers"),
-                   self.analyze_lists(prototype, parsed, "locations"),
+                   # self.analyze_lists(prototype, parsed, "locations"),
                    self.analyze_lists(prototype, parsed, "computers")]
-        complexities = [sum(x) for x in zip(*results)]
-        c_w = round(complexities[0], 2)
-        c_d = round(complexities[1], 2)
-        if c_w - c_d > 0:
-            self.log_file.write("{}  --->\t".format(",".join([str(x) for x in parsed])))
-            self.log_file.write("Cw: {}, ".format(str(c_w)))
-            self.log_file.write("Cd: {}, ".format(str(c_d)))
-            self.log_file.write("U: {}\n".format(str(c_w - c_d)))
+        for num, w in zip(range(3), results):
+            x = w[0]
+            y = w[1]
+            if x - y >= 1:
+                print(num, ": ", ",".join([str(p) for p in parsed]), "Cw: ", x, " Cd: ", y, " U: ", x - y)
 
     def generate_prototype(self, parsed):
         return {
