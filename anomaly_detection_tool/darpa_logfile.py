@@ -16,8 +16,6 @@ class DarpaLogfile:
         self.lookup = []
         for exp in range(15):
             self.lookup = self.lookup + (2 ** exp) * [exp]
-        # for exp in range(2 ** 12):
-        #     self.lookup.append(exp)
         assert len(self.categorical_prototypes) == len(self.numerical_prototypes)
         self.observation_windows_categorical = {}
         self.observation_windows_numerical = {}
@@ -68,7 +66,7 @@ class DarpaLogfile:
                     self.added[parsed[self.focus]][name] = [parsed[index]]
                 c_w = self.INFINITY
                 c_d = 0
-                print((time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), "New IP detected at ->",
+                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), "New IP detected at ->",
                       parsed[index])
             else:
                 tmp = prototype["{}_ranking".format(name)].index(parsed[index])
@@ -104,7 +102,7 @@ class DarpaLogfile:
                     self.observation_windows_numerical[parsed[self.focus]][name]):
                 tmp = math.floor(
                     self.observation_windows_numerical[parsed[self.focus]][name][cnt] - parsed[index]) / (
-                                  0.5 * prototype["stdev"])
+                              0.5 * prototype["stdev"]) + cnt
                 if tmp < threshold:
                     threshold = int(tmp)
                 cnt += 1
@@ -113,31 +111,27 @@ class DarpaLogfile:
             results.append((c_w, c_d))
         return results
 
-
-time = datetime.datetime(hour=8, second=2, year=1999, day=29, month=3)
-
-
-def analyze(prototypes, line):
-    parsed = prototypes.parse_line(line)
-    prototype_categorical, prototype_numerical = prototypes.assign_to_prototype(parsed)
-    if prototype_categorical and prototype_numerical:
-        res = prototypes.analyze_categorical(prototype_categorical, parsed)
-        if res[0][0] > res[0][1]:
-            print((time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Src:", parsed[2],
-                  res[0][0], res[0][1], res[0][0] - res[0][1])
-        if res[1][0] > res[1][1]:
-            print((time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Dst:", parsed[3],
-                  res[1][0], res[1][1], res[1][0] - res[1][1])
-        res = prototypes.analyze_numerical(prototype_numerical, parsed)
-        if res[0][0] > res[0][1]:
-            print((time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Size:", parsed[-1],
-                  res[0][0], res[0][1], res[0][0] - res[0][1])
-    else:
-        print("New protocol, {}".format(parsed[4]), "need manual intervention")
+    def analyze(self, prototypes, line):
+        parsed = prototypes.parse_line(line)
+        prototype_categorical, prototype_numerical = prototypes.assign_to_prototype(parsed)
+        if prototype_categorical and prototype_numerical:
+            res = prototypes.analyze_categorical(prototype_categorical, parsed)
+            if res[0][0] - res[0][1] > 4:
+                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Src:",
+                      parsed[2], res[0][0], res[0][1], res[0][0] - res[0][1])
+            if res[1][0] - res[1][1] > 4:
+                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Dst:",
+                      parsed[3], res[1][0], res[1][1], res[1][0] - res[1][1])
+            res = prototypes.analyze_numerical(prototype_numerical, parsed)
+            if res[0][0] - res[0][1] > 4:
+                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Size:",
+                      parsed[-1], res[0][0], res[0][1], res[0][0] - res[0][1])
+        else:
+            print("New protocol, {}".format(parsed[4]), "need manual intervention")
 
 
 if __name__ == "__main__":
     prototypes = DarpaLogfile(sys.argv[2], sys.argv[3])
     with open(sys.argv[1]) as file:
         for line in file:
-            analyze(prototypes, line)
+            prototypes.analyze(prototypes, line)
