@@ -1,21 +1,25 @@
-import datetime
+from datetime import timedelta, datetime
 import json
 import math
 import sys
+import importlib
 
 
 class DarpaLogfile:
 
-    def __init__(self, categorical_prototypes, numerical_prototypes):
+    def __init__(self, categorical_prototypes, numerical_prototypes, domain_plugin):
         file_categorical = open(categorical_prototypes)
         file_numerical = open(numerical_prototypes)
         self.categorical_features = [[3, "destinations"], [2, "sources"]]
-        self.numerical_features = [(5, "length")]
+        self.numerical_features = [[5, "length"], [6, "variables"]]
         self.categorical_prototypes = json.load(file_categorical)
         self.numerical_prototypes = json.load(file_numerical)
+        self.lookup_c_d = []
+        for x in range(2**13):
+            self.lookup_c_d.append(len(bin(x)[2:]))
         self.lookup = []
-        for exp in range(15):
-            self.lookup = self.lookup + (2 ** exp) * [exp]
+        for x in range(15):
+            self.lookup += (2 ** x) * [x]
         assert len(self.categorical_prototypes) == len(self.numerical_prototypes)
         self.observation_windows_categorical = {}
         self.observation_windows_numerical = {}
@@ -30,11 +34,13 @@ class DarpaLogfile:
         self.added = {x: {} for x in self.categorical_prototypes.keys()}
         self.INFINITY = 9999
         self.focus = 4
-        self.time = datetime.datetime(hour=8, second=2, year=1999, day=29, month=3)
+        self.time = datetime(hour=8, second=2, year=1999, day=29, month=3)
+        self.domain_plugin = domain_plugin
 
     def parse_line(self, line):
         parsed = line.split(",")
-        parsed[-1] = int(parsed[-1].replace("\n", ""))
+        parsed[-1] = int(parsed[-1])
+        parsed[-2] = int(parsed[-2])
         return parsed
 
     def assign_to_prototype(self, parsed):
@@ -66,15 +72,15 @@ class DarpaLogfile:
                     self.added[parsed[self.focus]][name] = [parsed[index]]
                 c_w = self.INFINITY
                 c_d = 0
-                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), "New IP detected at ->",
+                print((self.time + timedelta(seconds=float(parsed[1]))).isoformat(), "New IP detected at ->",
                       parsed[index])
             else:
                 tmp = prototype["{}_ranking".format(name)].index(parsed[index])
-                c_w = self.lookup[tmp]
+                c_w = self.lookup_c_d[tmp]
                 if parsed[index] not in self.observation_windows_categorical[parsed[self.focus]][name][:tmp]:
                     c_d = c_w
                 else:
-                    c_d = self.lookup[
+                    c_d = self.lookup_c_d[
                         self.observation_windows_categorical[parsed[self.focus]][name].index(parsed[index])]
             self.observation_windows_categorical[parsed[self.focus]][name].insert(0, parsed[index])
             results.append((c_w, c_d))
@@ -85,53 +91,58 @@ class DarpaLogfile:
     def analyze_numerical(self, prototype, parsed):
         results = []
         for feature in self.numerical_features:
-            index = feature[0]  # parsed[index] is the length
-            name = feature[1]  # parsed[index] is the length
+            index = feature[0]
+            name = feature[1]
             parsed[index] = float(parsed[index])
-            if prototype["stdev"] == 0 and parsed[index] != prototype["mean"]:
+            if prototype[name]["stdev"] == 0 and parsed[index] != prototype[name]["mean"]:
                 threshold = 0
                 c_w = self.INFINITY
-            elif prototype["stdev"] == 0:
+            elif prototype[name]["stdev"] == 0:
                 threshold = 0
                 c_w = 0
             else:
-                threshold = math.floor(abs(prototype["mean"] - parsed[index]) / (0.5 * prototype["stdev"]))
+                threshold = math.floor(abs(prototype[name]["mean"] - parsed[index]) / (0.25 * prototype[name]["stdev"]))
                 c_w = self.lookup[threshold]
             cnt = 0
-            while cnt < threshold and self.observation_windows_numerical[parsed[self.focus]][name] and cnt < len(
+            while cnt < (threshold - 1) and self.observation_windows_numerical[parsed[self.focus]][name] and cnt < len(
                     self.observation_windows_numerical[parsed[self.focus]][name]):
                 tmp = math.floor(
                     self.observation_windows_numerical[parsed[self.focus]][name][cnt] - parsed[index]) / (
-                              0.5 * prototype["stdev"]) + cnt
+                              0.25 * prototype[name]["stdev"]) + cnt
                 if tmp < threshold:
                     threshold = int(tmp)
                 cnt += 1
-            c_d = self.lookup[threshold]
+            c_d = self.lookup_c_d[threshold]
             self.observation_windows_numerical[parsed[self.focus]][name].insert(0, parsed[index])
-            results.append((c_w, c_d))
+            results.append((c_w, c_d + 1))
         return results
 
     def analyze(self, prototypes, line):
+        res = []
         parsed = prototypes.parse_line(line)
         prototype_categorical, prototype_numerical = prototypes.assign_to_prototype(parsed)
         if prototype_categorical and prototype_numerical:
-            res = prototypes.analyze_categorical(prototype_categorical, parsed)
-            if res[0][0] - res[0][1] > 4:
-                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Src:",
-                      parsed[2], res[0][0], res[0][1], res[0][0] - res[0][1])
-            if res[1][0] - res[1][1] > 4:
-                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Dst:",
-                      parsed[3], res[1][0], res[1][1], res[1][0] - res[1][1])
-            res = prototypes.analyze_numerical(prototype_numerical, parsed)
-            if res[0][0] - res[0][1] > 4:
-                print((self.time + datetime.timedelta(seconds=float(parsed[1]))).isoformat(), parsed[-2], "Size:",
-                      parsed[-1], res[0][0], res[0][1], res[0][0] - res[0][1])
+            res += prototypes.analyze_categorical(prototype_categorical, parsed)
+            res += prototypes.analyze_numerical(prototype_numerical, parsed)
+            c_w = 0
+            c_d = 0
+            if self.domain_plugin:
+                res = self.domain_plugin.domain_analyze(res)
+            for x, y in res:
+                c_w += x
+                c_d += y
+            if c_w - c_d > 5:
+                print((self.time + timedelta(seconds=float(parsed[1]))).isoformat(), parsed, c_w, c_d, c_w - c_d)
         else:
             print("New protocol, {}".format(parsed[4]), "need manual intervention")
 
 
 if __name__ == "__main__":
-    prototypes = DarpaLogfile(sys.argv[2], sys.argv[3])
+    if len(sys.argv) == 5:
+        domain_plugin = importlib.import_module(sys.argv[4])
+    else:
+        domain_plugin = None
+    prototypes = DarpaLogfile(sys.argv[2], sys.argv[3], domain_plugin)
     with open(sys.argv[1]) as file:
         for line in file:
             prototypes.analyze(prototypes, line)
