@@ -1,0 +1,6 @@
+{"_comment": "categorical and numerical features, must be type lists with its possition in the log line",
+ "_example": [[3, "destinations"], [2, "sources"]], 
+ "categorical_features": [[3, "destinations"], [2, "sources"]], 
+ "numerical_features": [[5, "length"], [6, "variables"]], 
+ "unexpectedness_allowed": 5,
+ "focus": 4 }
