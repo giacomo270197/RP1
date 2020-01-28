@@ -144,7 +144,7 @@ class DarpaLogfile:
 
 
 if __name__ == "__main__":
-    #usage: program.py prototypes categorical_prototypes numerical_prototypes domain_plugin configuration_file
+    #usage: program.py prototypes categorical_prototypes numerical_prototypes configuration_file [domain_plugin]
     if len(sys.argv) == 6:
         domain_plugin = importlib.import_module(sys.argv[5])
     else:
